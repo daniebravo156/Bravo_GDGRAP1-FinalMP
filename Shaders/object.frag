@@ -1,12 +1,15 @@
 #version 330 core
 
 in vec3 FragPos;
-in vec3 Normal;
+in vec3 WorldNormal;
 in vec2 TexCoord;
+in mat3 TBN;
 
 out vec4 FragColor;
 
 uniform sampler2D tex0;
+uniform sampler2D norm_tex;
+uniform bool useNormalMap;
 
 uniform vec3 pointLightPos;
 uniform vec3 pointLightColor;
@@ -19,18 +22,24 @@ uniform float dirLightIntensity;
 void main()
 {
     vec3 baseColor = texture(tex0, TexCoord).rgb;
-    vec3 norm = normalize(Normal);
 
-    vec3 ambient = 0.18 * baseColor;
+    vec3 normal = normalize(WorldNormal);
+    if (useNormalMap) {
+        vec3 mapNormal = texture(norm_tex, TexCoord).rgb;
+        mapNormal = normalize(mapNormal * 2.0 - 1.0);
+        normal = normalize(TBN * mapNormal);
+    }
+
+    vec3 ambient = 0.15 * baseColor;
 
     vec3 pointDir = normalize(pointLightPos - FragPos);
-    float pointDiff = max(dot(norm, pointDir), 0.0);
-    vec3 pointLight = pointDiff * pointLightColor * pointLightIntensity * baseColor;
+    float pointDiff = max(dot(normal, pointDir), 0.0);
+    vec3 pointResult = pointDiff * pointLightColor * pointLightIntensity * baseColor;
 
     vec3 moonDir = normalize(-dirLightDirection);
-    float dirDiff = max(dot(norm, moonDir), 0.0);
-    vec3 dirLight = dirDiff * dirLightColor * dirLightIntensity * baseColor;
+    float dirDiff = max(dot(normal, moonDir), 0.0);
+    vec3 dirResult = dirDiff * dirLightColor * dirLightIntensity * baseColor;
 
-    vec3 finalColor = ambient + pointLight + dirLight;
+    vec3 finalColor = ambient + pointResult + dirResult;
     FragColor = vec4(finalColor, 1.0);
 }

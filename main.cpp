@@ -14,48 +14,51 @@
 #include <string>
 #include <vector>
 #include <fstream>
+#include <cmath>
 
-// Camera Classes
+// Camera
 class MyCamera {
 protected:
-    glm::mat4 viewMatrix = glm::mat4(1.0f);
     glm::mat4 projectionMatrix = glm::mat4(1.0f);
 public:
     virtual glm::mat4 getViewMatrix() = 0;
     virtual glm::mat4 getProjectionMatrix() = 0;
 };
 
-class PerspectiveCamera : public MyCamera {
+class ThirdPersonCamera : public MyCamera {
 private:
-    float radius, yaw, pitch;
-    glm::vec3 centerTarget;
+    float radius;
+    float yaw;
+    float pitch;
+    glm::vec3 target;
 public:
-    PerspectiveCamera(float r, glm::vec3 target)
-        : radius(r), yaw(-90.0f), pitch(-15.0f), centerTarget(target) {
+    ThirdPersonCamera(float r, glm::vec3 startTarget)
+        : radius(r), yaw(-90.0f), pitch(-15.0f), target(startTarget) {
         projectionMatrix = glm::perspective(glm::radians(60.0f), 800.0f / 600.0f, 0.1f, 1000.0f);
     }
 
-    void setTarget(glm::vec3 target) {
-        centerTarget = target;
+    void setTarget(glm::vec3 newTarget) {
+        target = newTarget;
     }
 
     void updateAngles(float xoffset, float yoffset) {
         yaw += xoffset * 0.2f;
         pitch += yoffset * 0.2f;
-        if (pitch > 45.0f) pitch = 45.0f;
-        if (pitch < -45.0f) pitch = -45.0f;
+
+        if (pitch > 20.0f) pitch = 20.0f;
+        if (pitch < -35.0f) pitch = -35.0f;
     }
 
-    glm::vec3 getPosition() {
+    glm::vec3 getPosition() const {
         glm::vec3 pos;
-        pos.x = centerTarget.x + radius * cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-        pos.y = centerTarget.y + radius * sin(glm::radians(pitch)) + 6.0f;
-        pos.z = centerTarget.z + radius * sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+        pos.x = target.x + radius * cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+        pos.y = target.y + radius * sin(glm::radians(pitch)) + 6.0f;
+        pos.z = target.z + radius * sin(glm::radians(yaw)) * cos(glm::radians(pitch));
         return pos;
     }
 
     glm::mat4 getViewMatrix() override {
-        return glm::lookAt(getPosition(), centerTarget, glm::vec3(0.0f, 1.0f, 0.0f));
+        return glm::lookAt(getPosition(), target, glm::vec3(0.0f, 1.0f, 0.0f));
     }
 
     glm::mat4 getProjectionMatrix() override {
@@ -67,20 +70,25 @@ class OrthoCamera : public MyCamera {
 private:
     glm::vec3 centerTarget;
 public:
-    OrthoCamera(glm::vec3 target = glm::vec3(0.0f)) : centerTarget(target) {
-        projectionMatrix = glm::ortho(-60.0f, 60.0f, -60.0f, 60.0f, 0.1f, 300.0f);
+    OrthoCamera(glm::vec3 startTarget = glm::vec3(0.0f)) : centerTarget(startTarget) {
+        projectionMatrix = glm::ortho(-60.0f, 60.0f, -60.0f, 60.0f, 0.1f, 1000.0f);
     }
 
-    void setTarget(glm::vec3 target) {
-        centerTarget = target;
+    void setTarget(glm::vec3 newTarget) {
+        centerTarget = newTarget;
+    }
+
+    void pan(float dx, float dz) {
+        centerTarget.x += dx;
+        centerTarget.z += dz;
+    }
+
+    glm::vec3 getPosition() const {
+        return glm::vec3(centerTarget.x, 80.0f, centerTarget.z);
     }
 
     glm::mat4 getViewMatrix() override {
-        return glm::lookAt(
-            glm::vec3(centerTarget.x, 80.0f, centerTarget.z),
-            centerTarget,
-            glm::vec3(0.0f, 0.0f, -1.0f)
-        );
+        return glm::lookAt(getPosition(), centerTarget, glm::vec3(0.0f, 0.0f, -1.0f));
     }
 
     glm::mat4 getProjectionMatrix() override {
@@ -88,27 +96,34 @@ public:
     }
 };
 
-// Light Classes
+// Light
 class Light {
 public:
     glm::vec3 color;
     float intensity;
+
     Light(glm::vec3 col, float ind) : color(col), intensity(ind) {}
 };
 
 class PointLight : public Light {
 public:
     glm::vec3 position;
-    PointLight(glm::vec3 pos, glm::vec3 col, float ind) : Light(col, ind), position(pos) {}
+
+    PointLight(glm::vec3 pos, glm::vec3 col, float ind)
+        : Light(col, ind), position(pos) {
+    }
 };
 
 class DirectionLight : public Light {
 public:
     glm::vec3 direction;
-    DirectionLight(glm::vec3 dir, glm::vec3 col, float ind) : Light(col, ind), direction(dir) {}
+
+    DirectionLight(glm::vec3 dir, glm::vec3 col, float ind)
+        : Light(col, ind), direction(glm::normalize(dir)) {
+    }
 };
 
-// Model Struct 
+// Model
 struct Model3D {
     glm::vec3 position = glm::vec3(0.0f);
     glm::vec3 rotation = glm::vec3(0.0f);
@@ -130,28 +145,88 @@ struct Model3D {
     }
 };
 
-//  Globals 
+// Player
+class Player {
+public:
+    Model3D model;
+    float yaw = -90.0f;
+    float moveSpeed = 12.0f;
+    float turnSpeed = 95.0f;
+    float visualYawOffset = 0.0f;
+
+    glm::vec3 getForward() const {
+        return glm::normalize(glm::vec3(
+            cos(glm::radians(yaw)),
+            0.0f,
+            sin(glm::radians(yaw))
+        ));
+    }
+
+    void syncRotation() {
+        model.rotation.y = -yaw + visualYawOffset;
+    }
+
+    void moveForward(float deltaTime) {
+        model.position += getForward() * moveSpeed * deltaTime;
+    }
+
+    void moveBackward(float deltaTime) {
+        model.position -= getForward() * moveSpeed * deltaTime;
+    }
+
+    void turnLeft(float deltaTime) {
+        yaw -= turnSpeed * deltaTime;
+        syncRotation();
+    }
+
+    void turnRight(float deltaTime) {
+        yaw += turnSpeed * deltaTime;
+        syncRotation();
+    }
+
+    glm::vec3 getCameraTarget() const {
+        return model.position + glm::vec3(0.0f, 2.5f, 0.0f);
+    }
+
+    glm::vec3 getFrontLightPos() const {
+        return model.position + glm::vec3(0.0f, 1.8f, 0.0f) + getForward() * 5.0f;
+    }
+
+    void draw(GLuint shaderProgram, GLuint VAO, int indexCount) {
+        model.draw(shaderProgram, VAO, indexCount);
+    }
+};
+
+// Globals
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
 int activeCamera = 1;
 
-PerspectiveCamera perspCam(18.0f, glm::vec3(0.0f, 2.0f, 0.0f));
+ThirdPersonCamera thirdCam(18.0f, glm::vec3(0.0f, 2.5f, 0.0f));
 OrthoCamera orthoCam(glm::vec3(0.0f));
 
+Player player;
+
+PointLight pLight(glm::vec3(0.0f, 2.0f, 5.0f), glm::vec3(1.0f, 0.95f, 0.85f), 0.8f);
+DirectionLight dLight(glm::vec3(-0.3f, -1.0f, -0.2f), glm::vec3(0.45f, 0.5f, 0.7f), 0.7f);
+
+int pointLightMode = 1;
+float pointLightLevels[3] = { 0.35f, 0.8f, 1.3f };
+
 bool firstMouse = true;
-float lastX = SCR_WIDTH / 2.0f;
-float lastY = SCR_HEIGHT / 2.0f;
+bool cursorEnabled = false;
+float lastX = SCR_WIDTH * 0.5f;
+float lastY = SCR_HEIGHT * 0.5f;
 
-glm::vec3 tankPosition(0.0f, 0.0f, 0.0f);
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
 
-PointLight pLight(glm::vec3(0.0f, 3.0f, 8.0f), glm::vec3(1.0f, 0.95f, 0.85f), 1.0f);
-DirectionLight dLight(glm::normalize(glm::vec3(-0.3f, -1.0f, -0.2f)), glm::vec3(0.45f, 0.5f, 0.7f), 0.7f);
-
-//  Helper Functions 
+// Files
 std::string get_file_contents(const char* filename) {
     std::string contents = "";
     std::ifstream in(filename, std::ios::binary);
+
     if (in) {
         in.seekg(0, std::ios::end);
         contents.resize((size_t)in.tellg());
@@ -162,9 +237,11 @@ std::string get_file_contents(const char* filename) {
     else {
         std::cout << "FAILED TO OPEN FILE: " << filename << std::endl;
     }
+
     return contents;
 }
 
+// Textures
 GLuint loadTexture(const char* path) {
     GLuint textureID;
     glGenTextures(1, &textureID);
@@ -182,129 +259,16 @@ GLuint loadTexture(const char* path) {
     if (data) {
         GLenum format = GL_RGB;
         if (nrChannels == 4) format = GL_RGBA;
+
         glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
     }
     else {
-        std::cout << "FAILED TO LOAD TEXTURE " << path << std::endl;
+        std::cout << "FAILED TO LOAD TEXTURE: " << path << std::endl;
     }
 
     stbi_image_free(data);
     return textureID;
-}
-
-bool loadMesh(const char* path, GLuint& VAO, GLuint& VBO, GLuint& EBO, size_t& indexCount) {
-    bool isSuccessful = true;
-    tinyobj::attrib_t attributes;
-    std::vector<tinyobj::shape_t> shapes;
-    std::vector<tinyobj::material_t> materials;
-    std::string warn, err;
-
-    if (!tinyobj::LoadObj(&attributes, &shapes, &materials, &warn, &err, path)) {
-        std::cout << "ERROR LOADING " << path << ": " << err << std::endl;
-        isSuccessful = false;
-    }
-    else {
-        std::vector<GLuint> mesh_indices;
-        std::vector<GLfloat> mesh_vertices;
-
-        for (size_t i = 0; i < shapes[0].mesh.indices.size(); i++) {
-            tinyobj::index_t vData = shapes[0].mesh.indices[i];
-            mesh_indices.push_back((GLuint)i);
-
-            mesh_vertices.push_back(attributes.vertices[3 * vData.vertex_index + 0]);
-            mesh_vertices.push_back(attributes.vertices[3 * vData.vertex_index + 1]);
-            mesh_vertices.push_back(attributes.vertices[3 * vData.vertex_index + 2]);
-
-            if (attributes.normals.size() > 0) {
-                mesh_vertices.push_back(attributes.normals[3 * vData.normal_index + 0]);
-                mesh_vertices.push_back(attributes.normals[3 * vData.normal_index + 1]);
-                mesh_vertices.push_back(attributes.normals[3 * vData.normal_index + 2]);
-            }
-            else {
-                mesh_vertices.push_back(0.0f);
-                mesh_vertices.push_back(1.0f);
-                mesh_vertices.push_back(0.0f);
-            }
-
-            if (attributes.texcoords.size() > 0) {
-                mesh_vertices.push_back(attributes.texcoords[2 * vData.texcoord_index + 0]);
-                mesh_vertices.push_back(attributes.texcoords[2 * vData.texcoord_index + 1]);
-            }
-            else {
-                mesh_vertices.push_back(0.0f);
-                mesh_vertices.push_back(0.0f);
-            }
-        }
-
-        glGenVertexArrays(1, &VAO);
-        glGenBuffers(1, &VBO);
-        glGenBuffers(1, &EBO);
-
-        glBindVertexArray(VAO);
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * mesh_vertices.size(), mesh_vertices.data(), GL_STATIC_DRAW);
-
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * mesh_indices.size(), mesh_indices.data(), GL_STATIC_DRAW);
-
-        GLsizei stride = 8 * sizeof(float);
-
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0);
-        glEnableVertexAttribArray(0);
-
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, (void*)(3 * sizeof(float)));
-        glEnableVertexAttribArray(1);
-
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride, (void*)(6 * sizeof(float)));
-        glEnableVertexAttribArray(2);
-
-        indexCount = mesh_indices.size();
-    }
-
-    return isSuccessful;
-}
-
-void createGroundPlane(GLuint& VAO, GLuint& VBO, GLuint& EBO, size_t& indexCount) {
-    float s = 120.0f;
-    float y = 0.0f;
-
-    GLfloat vertices[] = {
-        -s, y, -s,   0.0f, 1.0f, 0.0f,   0.0f, 0.0f,
-         s, y, -s,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,
-         s, y,  s,   0.0f, 1.0f, 0.0f,   1.0f, 1.0f,
-        -s, y,  s,   0.0f, 1.0f, 0.0f,   0.0f, 1.0f
-    };
-
-    GLuint indices[] = {
-        0, 1, 2,
-        0, 2, 3
-    };
-
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
-
-    glBindVertexArray(VAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-    GLsizei stride = 8 * sizeof(float);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride, (void*)(6 * sizeof(float)));
-    glEnableVertexAttribArray(2);
-
-    indexCount = 6;
 }
 
 GLuint loadCubemap(std::vector<std::string> faces) {
@@ -317,6 +281,7 @@ GLuint loadCubemap(std::vector<std::string> faces) {
     int width, height, nrChannels;
     for (unsigned int i = 0; i < faces.size(); i++) {
         unsigned char* data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
+
         if (data) {
             GLenum format = GL_RGB;
             if (nrChannels == 4) format = GL_RGBA;
@@ -336,6 +301,7 @@ GLuint loadCubemap(std::vector<std::string> faces) {
         else {
             std::cout << "FAILED TO LOAD CUBEMAP FACE: " << faces[i] << std::endl;
         }
+
         stbi_image_free(data);
     }
 
@@ -348,19 +314,241 @@ GLuint loadCubemap(std::vector<std::string> faces) {
     return textureID;
 }
 
-//  Input 
+// Mesh
+bool loadMeshNormalMapped(const char* path, GLuint& VAO, GLuint& VBO, GLuint& EBO, size_t& indexCount) {
+    tinyobj::attrib_t attributes;
+    std::vector<tinyobj::shape_t> shapes;
+    std::vector<tinyobj::material_t> materials;
+    std::string warn, err;
+
+    if (!tinyobj::LoadObj(&attributes, &shapes, &materials, &warn, &err, path, nullptr, true)) {
+        std::cout << "ERROR LOADING " << path << ": " << err << std::endl;
+        return false;
+    }
+
+    std::vector<GLuint> mesh_indices;
+    std::vector<GLfloat> mesh_vertices;
+    GLuint runningIndex = 0;
+
+    auto getPos = [&](tinyobj::index_t idx) -> glm::vec3 {
+        return glm::vec3(
+            attributes.vertices[3 * idx.vertex_index + 0],
+            attributes.vertices[3 * idx.vertex_index + 1],
+            attributes.vertices[3 * idx.vertex_index + 2]
+        );
+        };
+
+    auto getNormal = [&](tinyobj::index_t idx) -> glm::vec3 {
+        if (idx.normal_index >= 0 && !attributes.normals.empty()) {
+            return glm::vec3(
+                attributes.normals[3 * idx.normal_index + 0],
+                attributes.normals[3 * idx.normal_index + 1],
+                attributes.normals[3 * idx.normal_index + 2]
+            );
+        }
+
+        return glm::vec3(0.0f, 1.0f, 0.0f);
+        };
+
+    auto getUV = [&](tinyobj::index_t idx) -> glm::vec2 {
+        if (idx.texcoord_index >= 0 && !attributes.texcoords.empty()) {
+            return glm::vec2(
+                attributes.texcoords[2 * idx.texcoord_index + 0],
+                attributes.texcoords[2 * idx.texcoord_index + 1]
+            );
+        }
+
+        return glm::vec2(0.0f, 0.0f);
+        };
+
+    auto pushVertex = [&](glm::vec3 pos, glm::vec3 normal, glm::vec2 uv, glm::vec3 tangent, glm::vec3 bitangent) {
+        mesh_vertices.push_back(pos.x);
+        mesh_vertices.push_back(pos.y);
+        mesh_vertices.push_back(pos.z);
+
+        mesh_vertices.push_back(normal.x);
+        mesh_vertices.push_back(normal.y);
+        mesh_vertices.push_back(normal.z);
+
+        mesh_vertices.push_back(uv.x);
+        mesh_vertices.push_back(uv.y);
+
+        mesh_vertices.push_back(tangent.x);
+        mesh_vertices.push_back(tangent.y);
+        mesh_vertices.push_back(tangent.z);
+
+        mesh_vertices.push_back(bitangent.x);
+        mesh_vertices.push_back(bitangent.y);
+        mesh_vertices.push_back(bitangent.z);
+
+        mesh_indices.push_back(runningIndex++);
+        };
+
+    for (size_t s = 0; s < shapes.size(); s++) {
+        std::vector<tinyobj::index_t>& indices = shapes[s].mesh.indices;
+
+        for (size_t i = 0; i + 2 < indices.size(); i += 3) {
+            tinyobj::index_t i0 = indices[i + 0];
+            tinyobj::index_t i1 = indices[i + 1];
+            tinyobj::index_t i2 = indices[i + 2];
+
+            glm::vec3 p0 = getPos(i0);
+            glm::vec3 p1 = getPos(i1);
+            glm::vec3 p2 = getPos(i2);
+
+            glm::vec3 n0 = getNormal(i0);
+            glm::vec3 n1 = getNormal(i1);
+            glm::vec3 n2 = getNormal(i2);
+
+            glm::vec2 uv0 = getUV(i0);
+            glm::vec2 uv1 = getUV(i1);
+            glm::vec2 uv2 = getUV(i2);
+
+            glm::vec3 deltaPos1 = p1 - p0;
+            glm::vec3 deltaPos2 = p2 - p0;
+            glm::vec2 deltaUV1 = uv1 - uv0;
+            glm::vec2 deltaUV2 = uv2 - uv0;
+
+            glm::vec3 tangent(1.0f, 0.0f, 0.0f);
+            glm::vec3 bitangent(0.0f, 0.0f, 1.0f);
+
+            float det = deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x;
+            if (fabs(det) > 0.00001f) {
+                float invDet = 1.0f / det;
+                tangent = glm::normalize((deltaPos1 * deltaUV2.y - deltaPos2 * deltaUV1.y) * invDet);
+                bitangent = glm::normalize((deltaPos2 * deltaUV1.x - deltaPos1 * deltaUV2.x) * invDet);
+            }
+
+            pushVertex(p0, n0, uv0, tangent, bitangent);
+            pushVertex(p1, n1, uv1, tangent, bitangent);
+            pushVertex(p2, n2, uv2, tangent, bitangent);
+        }
+    }
+
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+    glGenBuffers(1, &EBO);
+
+    glBindVertexArray(VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * mesh_vertices.size(), mesh_vertices.data(), GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * mesh_indices.size(), mesh_indices.data(), GL_STATIC_DRAW);
+
+    GLsizei stride = 14 * sizeof(float);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride, (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, stride, (void*)(8 * sizeof(float)));
+    glEnableVertexAttribArray(3);
+
+    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, stride, (void*)(11 * sizeof(float)));
+    glEnableVertexAttribArray(4);
+
+    indexCount = mesh_indices.size();
+    return true;
+}
+
+void createGroundPlane(GLuint& VAO, GLuint& VBO, GLuint& EBO, size_t& indexCount) {
+    float s = 120.0f;
+    float y = 0.0f;
+
+    GLfloat vertices[] = {
+        -s, y, -s,   0.0f, 1.0f, 0.0f,   0.0f, 0.0f,   1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f,
+         s, y, -s,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f,
+         s, y,  s,   0.0f, 1.0f, 0.0f,   1.0f, 1.0f,   1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f,
+        -s, y,  s,   0.0f, 1.0f, 0.0f,   0.0f, 1.0f,   1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f
+    };
+
+    GLuint indices[] = {
+        0, 1, 2,
+        0, 2, 3
+    };
+
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+    glGenBuffers(1, &EBO);
+
+    glBindVertexArray(VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    GLsizei stride = 14 * sizeof(float);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride, (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, stride, (void*)(8 * sizeof(float)));
+    glEnableVertexAttribArray(3);
+
+    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, stride, (void*)(11 * sizeof(float)));
+    glEnableVertexAttribArray(4);
+
+    indexCount = 6;
+}
+// cursor toggle
+void updateCursorMode(GLFWwindow* window) {
+    if (cursorEnabled) {
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    }
+    else {
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        firstMouse = true;
+    }
+}
+
+// Input
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, true);
     }
 
-    if ((action == GLFW_PRESS || action == GLFW_REPEAT)) {
-        if (key == GLFW_KEY_1) activeCamera = 1;
-        if (key == GLFW_KEY_2) activeCamera = 2;
+    if (action == GLFW_PRESS) {
+        if (key == GLFW_KEY_TAB) {
+            cursorEnabled = !cursorEnabled;
+            updateCursorMode(window);
+        }
+
+        if (key == GLFW_KEY_1) {
+            activeCamera = 1;
+            firstMouse = true;
+        }
+
+        if (key == GLFW_KEY_2) {
+            activeCamera = 2;
+        }
+
+        if (key == GLFW_KEY_F) {
+            pointLightMode = (pointLightMode + 1) % 3;
+            pLight.intensity = pointLightLevels[pointLightMode];
+        }
     }
 }
 
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
+    if (cursorEnabled) {
+        return;
+    }
+
     if (activeCamera == 1) {
         float xpos = static_cast<float>(xposIn);
         float ypos = static_cast<float>(yposIn);
@@ -373,14 +561,49 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
 
         float xoffset = xpos - lastX;
         float yoffset = lastY - ypos;
+
         lastX = xpos;
         lastY = ypos;
 
-        perspCam.updateAngles(xoffset, yoffset);
+        thirdCam.updateAngles(xoffset, yoffset);
     }
 }
 
-//  Main 
+void processInput(GLFWwindow* window) {
+    if (activeCamera == 1) {
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+            player.moveForward(deltaTime);
+        }
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+            player.moveBackward(deltaTime);
+        }
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+            player.turnLeft(deltaTime);
+        }
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+            player.turnRight(deltaTime);
+        }
+    }
+
+    if (activeCamera == 2) {
+        float panSpeed = 25.0f * deltaTime;
+
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+            orthoCam.pan(0.0f, -panSpeed);
+        }
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+            orthoCam.pan(0.0f, panSpeed);
+        }
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+            orthoCam.pan(-panSpeed, 0.0f);
+        }
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+            orthoCam.pan(panSpeed, 0.0f);
+        }
+    }
+}
+
+// Main
 int main() {
     int appStatus = 0;
 
@@ -389,7 +612,7 @@ int main() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "GDGRAP1 Final - Elden's Hill", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "GDGRAP1 Final - Eldens Hill", NULL, NULL);
 
     if (window == NULL) {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -405,10 +628,11 @@ int main() {
 
     glfwSetKeyCallback(window, key_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    updateCursorMode(window);
+
     glEnable(GL_DEPTH_TEST);
 
-    //  Compile object shaders 
+    // Object shader
     std::string objectVertCode = get_file_contents("Shaders/object.vert");
     std::string objectFragCode = get_file_contents("Shaders/object.frag");
     const char* objectV = objectVertCode.c_str();
@@ -426,10 +650,11 @@ int main() {
     glAttachShader(objectShaderProgram, objectVertexShader);
     glAttachShader(objectShaderProgram, objectFragmentShader);
     glLinkProgram(objectShaderProgram);
+
     glDeleteShader(objectVertexShader);
     glDeleteShader(objectFragmentShader);
 
-    //  Compile skybox shaders 
+    // Skybox shader
     std::string skyboxVertCode = get_file_contents("Shaders/skybox.vert");
     std::string skyboxFragCode = get_file_contents("Shaders/skybox.frag");
     const char* skyboxV = skyboxVertCode.c_str();
@@ -447,33 +672,37 @@ int main() {
     glAttachShader(skyboxShaderProgram, skyboxVertexShader);
     glAttachShader(skyboxShaderProgram, skyboxFragmentShader);
     glLinkProgram(skyboxShaderProgram);
+
     glDeleteShader(skyboxVertexShader);
     glDeleteShader(skyboxFragmentShader);
 
-    //  Load textures 
+    // Textures
     GLuint groundTexture = loadTexture("3D/field.jpg");
-    GLuint tankTexture = loadTexture("3D/tank_diffuse.PNG");
+    GLuint tankDiffuseTexture = loadTexture("3D/tank_diffuse.PNG");
+    GLuint tankNormalTexture = loadTexture("3D/tank_normal.png");
 
     glUseProgram(objectShaderProgram);
     glUniform1i(glGetUniformLocation(objectShaderProgram, "tex0"), 0);
+    glUniform1i(glGetUniformLocation(objectShaderProgram, "norm_tex"), 1);
 
     glUseProgram(skyboxShaderProgram);
     glUniform1i(glGetUniformLocation(skyboxShaderProgram, "skybox"), 0);
 
-    //  Load tank mesh 
+    // Tank
     GLuint tankVAO, tankVBO, tankEBO;
     size_t tankIndices;
 
-    if (!loadMesh("3D/tank.obj", tankVAO, tankVBO, tankEBO, tankIndices)) {
+    if (!loadMeshNormalMapped("3D/tank.obj", tankVAO, tankVBO, tankEBO, tankIndices)) {
         std::cout << "Tank failed to load." << std::endl;
         return -1;
     }
 
-    Model3D tankModel;
-    tankModel.position = glm::vec3(0.0f, 0.0f, 0.0f);
-    tankModel.scale = glm::vec3(1.0f);
+    player.model.position = glm::vec3(0.0f, 0.0f, 0.0f);
+    player.model.scale = glm::vec3(1.0f);
+	player.visualYawOffset = 90.0f; // because it faces the wrong way
+    player.syncRotation();
 
-    //  Create ground plane 
+    // Ground
     GLuint groundVAO, groundVBO, groundEBO;
     size_t groundIndices;
     createGroundPlane(groundVAO, groundVBO, groundEBO, groundIndices);
@@ -481,7 +710,7 @@ int main() {
     Model3D groundModel;
     groundModel.position = glm::vec3(0.0f);
 
-    //  Skybox geometry 
+    // Skybox geometry
     float skyboxVertices[] = {
         -1.0f, -1.0f, -1.0f,
          1.0f, -1.0f, -1.0f,
@@ -529,27 +758,33 @@ int main() {
 
     GLuint cubemapTexture = loadCubemap(skyboxFaces);
 
-    //  Render loop 
+    // Render loop
     while (!glfwWindowShouldClose(window)) {
+        float currentFrame = (float)glfwGetTime();
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
+
+        processInput(window);
+
+        thirdCam.setTarget(player.getCameraTarget());
+        pLight.position = player.getFrontLightPos();
+
         glClearColor(0.03f, 0.03f, 0.05f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        perspCam.setTarget(glm::vec3(0.0f, 2.0f, 0.0f));
-        orthoCam.setTarget(glm::vec3(0.0f, 0.0f, 0.0f));
-
-        glm::mat4 view;
-        glm::mat4 projection;
+        glm::mat4 view = glm::mat4(1.0f);
+        glm::mat4 projection = glm::mat4(1.0f);
 
         if (activeCamera == 1) {
-            view = perspCam.getViewMatrix();
-            projection = perspCam.getProjectionMatrix();
+            view = thirdCam.getViewMatrix();
+            projection = thirdCam.getProjectionMatrix();
         }
         else {
             view = orthoCam.getViewMatrix();
             projection = orthoCam.getProjectionMatrix();
         }
 
-        //  Draw skybox 
+        // Skybox
         glDepthFunc(GL_LEQUAL);
         glDepthMask(GL_FALSE);
 
@@ -568,7 +803,7 @@ int main() {
         glDepthMask(GL_TRUE);
         glDepthFunc(GL_LESS);
 
-        //  Draw lit objects 
+        // Objects
         glUseProgram(objectShaderProgram);
 
         glUniformMatrix4fv(glGetUniformLocation(objectShaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(view));
@@ -583,14 +818,26 @@ int main() {
         glUniform1f(glGetUniformLocation(objectShaderProgram, "dirLightIntensity"), dLight.intensity);
 
         // Ground
+        glUniform1i(glGetUniformLocation(objectShaderProgram, "useNormalMap"), false);
+
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, groundTexture);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, tankNormalTexture);
+
         groundModel.draw(objectShaderProgram, groundVAO, (int)groundIndices);
 
         // Tank
+        glUniform1i(glGetUniformLocation(objectShaderProgram, "useNormalMap"), true);
+
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, tankTexture);
-        tankModel.draw(objectShaderProgram, tankVAO, (int)tankIndices);
+        glBindTexture(GL_TEXTURE_2D, tankDiffuseTexture);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, tankNormalTexture);
+
+        player.draw(objectShaderProgram, tankVAO, (int)tankIndices);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
