@@ -209,9 +209,12 @@ int main() {
 
     glEnable(GL_DEPTH_TEST);
 
+    // Shaders
     Shader objectShader("Shaders/object.vert", "Shaders/object.frag");
     Shader skyboxShader("Shaders/skybox.vert", "Shaders/skybox.frag");
+    Shader uiShader("Shaders/ui.vert", "Shaders/ui.frag");
 
+    // Textures
     GLuint groundTexture = loadTexture("3D/field.jpg", true);
     GLuint tankDiffuseTexture = loadTexture("3D/tank_diffuse.PNG", true);
     GLuint tankNormalTexture = loadTexture("3D/tank_normal.png", true);
@@ -224,6 +227,7 @@ int main() {
     skyboxShader.setInt("skybox", 0);
     skyboxShader.setBool("nightVisionMode", false);
 
+    // Tank
     GLuint tankVAO, tankVBO, tankEBO;
     size_t tankIndices;
 
@@ -237,6 +241,7 @@ int main() {
     player.visualYawOffset = 90.0f;
     player.syncRotation();
 
+    // Ground
     GLuint groundVAO, groundVBO, groundEBO;
     size_t groundIndices;
     createGroundPlane(groundVAO, groundVBO, groundEBO, groundIndices);
@@ -244,6 +249,7 @@ int main() {
     Model3D groundModel;
     groundModel.position = glm::vec3(0.0f);
 
+    // Skybox geometry
     float skyboxVertices[] = {
         -1.0f, -1.0f, -1.0f,
          1.0f, -1.0f, -1.0f,
@@ -290,6 +296,39 @@ int main() {
     };
 
     GLuint cubemapTexture = loadCubemap(skyboxFaces);
+
+    // Binocular overlay quad
+    float uiVertices[] = {
+        // pos      // uv
+        -1.0f, -1.0f,  0.0f, 0.0f,
+         1.0f, -1.0f,  1.0f, 0.0f,
+         1.0f,  1.0f,  1.0f, 1.0f,
+        -1.0f,  1.0f,  0.0f, 1.0f
+    };
+
+    unsigned int uiIndices[] = {
+        0, 1, 2,
+        0, 2, 3
+    };
+
+    GLuint uiVAO, uiVBO, uiEBO;
+    glGenVertexArrays(1, &uiVAO);
+    glGenBuffers(1, &uiVBO);
+    glGenBuffers(1, &uiEBO);
+
+    glBindVertexArray(uiVAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, uiVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(uiVertices), uiVertices, GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, uiEBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uiIndices), uiIndices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+    glEnableVertexAttribArray(1);
 
     while (!glfwWindowShouldClose(window)) {
         float currentFrame = (float)glfwGetTime();
@@ -378,6 +417,20 @@ int main() {
             glBindTexture(GL_TEXTURE_2D, tankNormalTexture);
 
             player.draw(objectShader.ID, tankVAO, (int)tankIndices);
+        }
+
+        // Binocular overlay
+        if (activeCamera == 2) {
+            glDisable(GL_DEPTH_TEST);
+
+            uiShader.use();
+            uiShader.setFloat("screenWidth", (float)SCR_WIDTH);
+            uiShader.setFloat("screenHeight", (float)SCR_HEIGHT);
+
+            glBindVertexArray(uiVAO);
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+            glEnable(GL_DEPTH_TEST);
         }
 
         glfwSwapBuffers(window);

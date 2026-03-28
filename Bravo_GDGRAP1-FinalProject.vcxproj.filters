@@ -58,6 +58,8 @@
     <None Include="Shaders\object.frag" />
     <None Include="Shaders\object.vert" />
     <None Include="Shaders\skybox.frag" />
+    <None Include="Shaders\ui.vert" />
+    <None Include="Shaders\ui.frag" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="glad.c">
