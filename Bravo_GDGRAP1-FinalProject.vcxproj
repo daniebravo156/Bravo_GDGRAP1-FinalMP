@@ -77,12 +77,12 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\code\GitProjects\GDGRAP1\Bravo_GDGRAP1-FinalProject\Dependencies\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\code\GitProjects\GDGRAP1\Bravo_GDGRAP1-FinalMP\Dependencies\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\code\GitProjects\GDGRAP1\Bravo_GDGRAP1-FinalProject\Dependencies\lib-vc2019;C:\code\GitProjects\GDGRAP1\Bravo_GDGRAP1-FinalProject\Dependencies\lib-vc2022;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\code\GitProjects\GDGRAP1\Bravo_GDGRAP1-FinalMP\Dependencies\lib-vc2019;C:\code\GitProjects\GDGRAP1\Bravo_GDGRAP1-FinalMP\Dependencies\lib-vc2022;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>glfw3.lib;opengl32.lib;gdi32.lib;user32.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -108,12 +108,12 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\code\GitProjects\GDGRAP1\Bravo_GDGRAP1-FinalProject\Dependencies\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\code\GitProjects\GDGRAP1\Bravo_GDGRAP1-FinalMP\Dependencies\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\code\GitProjects\GDGRAP1\Bravo_GDGRAP1-FinalProject\Dependencies\lib-vc2019;C:\code\GitProjects\GDGRAP1\Bravo_GDGRAP1-FinalProject\Dependencies\lib-vc2022;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\code\GitProjects\GDGRAP1\Bravo_GDGRAP1-FinalMP\Dependencies\lib-vc2019;C:\code\GitProjects\GDGRAP1\Bravo_GDGRAP1-FinalMP\Dependencies\lib-vc2022;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>glfw3.lib;opengl32.lib;gdi32.lib;user32.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -133,17 +133,22 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Dependencies\include\glad\glad.h" />
+    <ClInclude Include="Dependencies\include\glad\include\glad\glad.h" />
+    <ClInclude Include="Dependencies\include\stb_image.h" />
+    <ClInclude Include="Dependencies\include\tiny_obj_loader.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="tiny_obj_loader.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Bravo_GDGRAP1-FinalProject.slnx" />
-    <None Include="Shaders\sample.frag" />
-    <None Include="Shaders\sample.vert" />
+    <None Include="Shaders\object.frag" />
+    <None Include="Shaders\object.vert" />
     <None Include="Shaders\skybox.frag" />
     <None Include="Shaders\skybox.vert" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Dependencies\include\glad\src\glad.c" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
