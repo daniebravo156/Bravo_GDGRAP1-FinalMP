@@ -10,6 +10,7 @@ out vec4 FragColor;
 uniform sampler2D tex0;
 uniform sampler2D norm_tex;
 uniform bool useNormalMap;
+uniform bool nightVisionMode;
 
 uniform vec3 pointLightPos;
 uniform vec3 pointLightColor;
@@ -24,6 +25,7 @@ void main()
     vec3 baseColor = texture(tex0, TexCoord).rgb;
 
     vec3 normal = normalize(WorldNormal);
+
     if (useNormalMap) {
         vec3 mapNormal = texture(norm_tex, TexCoord).rgb;
         mapNormal = normalize(mapNormal * 2.0 - 1.0);
@@ -41,5 +43,11 @@ void main()
     vec3 dirResult = dirDiff * dirLightColor * dirLightIntensity * baseColor;
 
     vec3 finalColor = ambient + pointResult + dirResult;
+
+    if (nightVisionMode) {
+        float brightness = dot(finalColor, vec3(0.299, 0.587, 0.114));
+        finalColor = vec3(0.08, 1.0, 0.08) * brightness;
+    }
+
     FragColor = vec4(finalColor, 1.0);
 }

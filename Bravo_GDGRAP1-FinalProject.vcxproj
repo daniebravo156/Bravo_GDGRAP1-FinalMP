@@ -137,6 +137,12 @@
     <ClInclude Include="Dependencies\include\glad\include\glad\glad.h" />
     <ClInclude Include="Dependencies\include\stb_image.h" />
     <ClInclude Include="Dependencies\include\tiny_obj_loader.h" />
+    <ClInclude Include="Headers\Camera.h" />
+    <ClInclude Include="Headers\Light.h" />
+    <ClInclude Include="Headers\Model.h" />
+    <ClInclude Include="Headers\Player.h" />
+    <ClInclude Include="Headers\Shader.h" />
+    <ClInclude Include="Headers\Utils.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="tiny_obj_loader.h" />
   </ItemGroup>
