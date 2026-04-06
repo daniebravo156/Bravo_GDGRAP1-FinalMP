@@ -6,6 +6,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <cmath>
 
+// Represents the player character, including its model and movement logic
 class Player {
 public:
     Model3D model;

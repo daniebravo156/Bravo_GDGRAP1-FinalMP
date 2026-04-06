@@ -1,5 +1,5 @@
 #version 330 core
-
+// Fragment shader for rendering the skybox with night vision mode
 in vec3 TexCoords;
 
 out vec4 FragColor;

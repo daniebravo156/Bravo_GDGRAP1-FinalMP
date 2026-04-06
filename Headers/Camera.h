@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+// Base camera class
 class Camera {
 protected:
     glm::mat4 projectionMatrix = glm::mat4(1.0f);

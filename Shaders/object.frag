@@ -1,5 +1,6 @@
 #version 330 core
 
+// Fragment shader for rendering objects with normal mapping and night vision mode
 in vec3 FragPos;
 in vec3 WorldNormal;
 in vec2 TexCoord;

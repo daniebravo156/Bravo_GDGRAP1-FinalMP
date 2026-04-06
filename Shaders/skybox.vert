@@ -1,4 +1,7 @@
 #version 330 core
+
+
+// Vertex shader for rendering the skybox
 layout (location = 0) in vec3 aPos;
 
 out vec3 TexCoords;

@@ -9,6 +9,7 @@
 #include <sstream>
 #include <iostream>
 
+// Simple shader class to load, compile, and manage vertex and fragment shaders
 class Shader {
 public:
     GLuint ID = 0;

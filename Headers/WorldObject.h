@@ -6,6 +6,7 @@
 #include <glad/glad.h>
 #include <vector>
 
+// Represents a renderable world object, including its geometry and textures
 struct WorldObjectAsset {
     GLuint VAO = 0;
     GLuint VBO = 0;

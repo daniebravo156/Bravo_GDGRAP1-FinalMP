@@ -10,6 +10,7 @@
 #include <iostream>
 #include <cmath>
 
+// Utility functions for loading textures, cubemaps, and meshes
 inline GLuint loadTexture(const char* path, bool flip = true) {
     GLuint textureID;
     glGenTextures(1, &textureID);

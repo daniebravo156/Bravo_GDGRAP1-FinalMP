@@ -208,6 +208,7 @@ int main() {
         }
     }
 
+	// Main loop
     if (programReady) {
         glfwSetKeyCallback(window, key_callback);
         glfwSetCursorPosCallback(window, mouse_callback);
@@ -262,6 +263,7 @@ int main() {
 
         Model3D groundModel;
         groundModel.position = glm::vec3(0.0f);
+        groundModel.scale = glm::vec3(3.0f); 
 		
 
         // Skybox geometry

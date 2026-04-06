@@ -1,5 +1,6 @@
 #version 330 core
 
+// Fragment shader for rendering the UI overlay with a binocular effect
 in vec2 TexCoord;
 
 out vec4 FragColor;
