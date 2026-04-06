@@ -143,6 +143,7 @@
     <ClInclude Include="Headers\Player.h" />
     <ClInclude Include="Headers\Shader.h" />
     <ClInclude Include="Headers\Utils.h" />
+    <ClInclude Include="Headers\WorldObject.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="tiny_obj_loader.h" />
   </ItemGroup>
@@ -156,7 +157,6 @@
     <None Include="Shaders\ui.vert" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Dependencies\include\glad\src\glad.c" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>

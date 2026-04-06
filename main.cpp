@@ -7,6 +7,7 @@
 #include "Headers/Light.h"
 #include "Headers/Model.h"
 #include "Headers/Player.h"
+#include "Headers/WorldObject.h"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -92,349 +93,424 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 }
 
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
-    if (cursorEnabled) {
-        return;
-    }
+    if (!cursorEnabled) {
+        if (activeCamera == 1) {
+            float xpos = static_cast<float>(xposIn);
+            float ypos = static_cast<float>(yposIn);
 
-    if (activeCamera == 1) {
-        float xpos = static_cast<float>(xposIn);
-        float ypos = static_cast<float>(yposIn);
+            if (firstMouse) {
+                lastX = xpos;
+                lastY = ypos;
+                firstMouse = false;
+            }
 
-        if (firstMouse) {
+            float xoffset = xpos - lastX;
+            float yoffset = lastY - ypos;
+
             lastX = xpos;
             lastY = ypos;
-            firstMouse = false;
+
+            thirdCam.updateAngles(xoffset, yoffset);
         }
-
-        float xoffset = xpos - lastX;
-        float yoffset = lastY - ypos;
-
-        lastX = xpos;
-        lastY = ypos;
-
-        thirdCam.updateAngles(xoffset, yoffset);
     }
 }
 
 void processInput(GLFWwindow* window) {
-    if (cursorEnabled) {
-        return;
-    }
+    if (!cursorEnabled) {
+        // Tank moves only in 3rd person
+        if (activeCamera == 1) {
+            if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+                player.moveForward(deltaTime);
+            }
+            if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+                player.moveBackward(deltaTime);
+            }
+            if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+                player.turnLeft(deltaTime);
+            }
+            if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+                player.turnRight(deltaTime);
+            }
+        }
 
-    // Tank moves only in 3rd person
-    if (activeCamera == 1) {
-        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-            player.moveForward(deltaTime);
-        }
-        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-            player.moveBackward(deltaTime);
-        }
-        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-            player.turnLeft(deltaTime);
-        }
-        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-            player.turnRight(deltaTime);
-        }
-    }
+        // Binocular controls
+        if (activeCamera == 2) {
+            float lookSpeed = 50.0f * deltaTime;
+            float zoomSpeed = 30.0f * deltaTime;
 
-    // Binocular controls
-    if (activeCamera == 2) {
-        float lookSpeed = 50.0f * deltaTime;
-        float zoomSpeed = 30.0f * deltaTime;
+            if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+                binoCam.rotate(0.0f, lookSpeed);
+            }
+            if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+                binoCam.rotate(0.0f, -lookSpeed);
+            }
+            if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+                binoCam.rotate(-lookSpeed, 0.0f);
+            }
+            if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+                binoCam.rotate(lookSpeed, 0.0f);
+            }
+            if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
+                binoCam.zoom(-zoomSpeed);
+            }
+            if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
+                binoCam.zoom(zoomSpeed);
+            }
+        }
 
-        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-            binoCam.rotate(0.0f, lookSpeed);
-        }
-        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-            binoCam.rotate(0.0f, -lookSpeed);
-        }
-        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-            binoCam.rotate(-lookSpeed, 0.0f);
-        }
-        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-            binoCam.rotate(lookSpeed, 0.0f);
-        }
-        if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
-            binoCam.zoom(-zoomSpeed);
-        }
-        if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
-            binoCam.zoom(zoomSpeed);
-        }
-    }
+        // Top view pan
+        if (activeCamera == 3) {
+            float panSpeed = 25.0f * deltaTime;
 
-    // Top view pan
-    if (activeCamera == 3) {
-        float panSpeed = 25.0f * deltaTime;
-
-        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-            orthoCam.pan(0.0f, -panSpeed);
-        }
-        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-            orthoCam.pan(0.0f, panSpeed);
-        }
-        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-            orthoCam.pan(-panSpeed, 0.0f);
-        }
-        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-            orthoCam.pan(panSpeed, 0.0f);
+            if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+                orthoCam.pan(0.0f, -panSpeed);
+            }
+            if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+                orthoCam.pan(0.0f, panSpeed);
+            }
+            if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+                orthoCam.pan(-panSpeed, 0.0f);
+            }
+            if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+                orthoCam.pan(panSpeed, 0.0f);
+            }
         }
     }
 }
 
 int main() {
     int appStatus = 0;
+    bool programReady = false;
+    GLFWwindow* window = NULL;
 
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "GDGRAP1 Final - Eldens Hill", NULL, NULL);
+    window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "GDGRAP1 Final - Eldens Hill", NULL, NULL);
 
     if (window == NULL) {
         std::cout << "Failed to create GLFW window" << std::endl;
-        return -1;
+        appStatus = -1;
     }
 
-    glfwMakeContextCurrent(window);
+    if (appStatus == 0) {
+        glfwMakeContextCurrent(window);
 
-    if (!gladLoadGL()) {
-        std::cout << "Failed to initialize GLAD" << std::endl;
-        return -1;
-    }
-
-    glfwSetKeyCallback(window, key_callback);
-    glfwSetCursorPosCallback(window, mouse_callback);
-    updateCursorMode(window);
-
-    glEnable(GL_DEPTH_TEST);
-
-    // Shaders
-    Shader objectShader("Shaders/object.vert", "Shaders/object.frag");
-    Shader skyboxShader("Shaders/skybox.vert", "Shaders/skybox.frag");
-    Shader uiShader("Shaders/ui.vert", "Shaders/ui.frag");
-
-    // Textures
-    GLuint groundTexture = loadTexture("3D/field.jpg", true);
-    GLuint tankDiffuseTexture = loadTexture("3D/tank_diffuse.PNG", true);
-    GLuint tankNormalTexture = loadTexture("3D/tank_normal.png", true);
-
-    objectShader.use();
-    objectShader.setInt("tex0", 0);
-    objectShader.setInt("norm_tex", 1);
-
-    skyboxShader.use();
-    skyboxShader.setInt("skybox", 0);
-    skyboxShader.setBool("nightVisionMode", false);
-
-    // Tank
-    GLuint tankVAO, tankVBO, tankEBO;
-    size_t tankIndices;
-
-    if (!loadMeshNormalMapped("3D/tank.obj", tankVAO, tankVBO, tankEBO, tankIndices)) {
-        std::cout << "Tank failed to load." << std::endl;
-        return -1;
-    }
-
-    player.model.position = glm::vec3(0.0f, 0.0f, 0.0f);
-    player.model.scale = glm::vec3(1.0f);
-    player.visualYawOffset = 90.0f;
-    player.syncRotation();
-
-    // Ground
-    GLuint groundVAO, groundVBO, groundEBO;
-    size_t groundIndices;
-    createGroundPlane(groundVAO, groundVBO, groundEBO, groundIndices);
-
-    Model3D groundModel;
-    groundModel.position = glm::vec3(0.0f);
-
-    // Skybox geometry
-    float skyboxVertices[] = {
-        -1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-         1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
-        -1.0f, -1.0f,  1.0f,
-         1.0f, -1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-        -1.0f,  1.0f,  1.0f
-    };
-
-    unsigned int skyboxIndices[] = {
-        0, 1, 2, 2, 3, 0,
-        1, 5, 6, 6, 2, 1,
-        5, 4, 7, 7, 6, 5,
-        4, 0, 3, 3, 7, 4,
-        3, 2, 6, 6, 7, 3,
-        4, 5, 1, 1, 0, 4
-    };
-
-    GLuint skyboxVAO, skyboxVBO, skyboxEBO;
-    glGenVertexArrays(1, &skyboxVAO);
-    glGenBuffers(1, &skyboxVBO);
-    glGenBuffers(1, &skyboxEBO);
-
-    glBindVertexArray(skyboxVAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), skyboxVertices, GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, skyboxEBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(skyboxIndices), skyboxIndices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    std::vector<std::string> skyboxFaces = {
-        "Skybox/skyboxRT.png",
-        "Skybox/skyboxLF.png",
-        "Skybox/skyboxUP.png",
-        "Skybox/skyboxDN.png",
-        "Skybox/skyboxFT.png",
-        "Skybox/skyboxBK.png"
-    };
-
-    GLuint cubemapTexture = loadCubemap(skyboxFaces);
-
-    // Binocular overlay quad
-    float uiVertices[] = {
-        // pos      // uv
-        -1.0f, -1.0f,  0.0f, 0.0f,
-         1.0f, -1.0f,  1.0f, 0.0f,
-         1.0f,  1.0f,  1.0f, 1.0f,
-        -1.0f,  1.0f,  0.0f, 1.0f
-    };
-
-    unsigned int uiIndices[] = {
-        0, 1, 2,
-        0, 2, 3
-    };
-
-    GLuint uiVAO, uiVBO, uiEBO;
-    glGenVertexArrays(1, &uiVAO);
-    glGenBuffers(1, &uiVBO);
-    glGenBuffers(1, &uiEBO);
-
-    glBindVertexArray(uiVAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, uiVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(uiVertices), uiVertices, GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, uiEBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uiIndices), uiIndices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    while (!glfwWindowShouldClose(window)) {
-        float currentFrame = (float)glfwGetTime();
-        deltaTime = currentFrame - lastFrame;
-        lastFrame = currentFrame;
-
-        processInput(window);
-
-        thirdCam.setTarget(player.getCameraTarget());
-        binoCam.setPosition(player.getBinocularPosition());
-        pLight.position = player.getFrontLightPos();
-
-        glClearColor(0.03f, 0.03f, 0.05f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        glm::mat4 view = glm::mat4(1.0f);
-        glm::mat4 projection = glm::mat4(1.0f);
-
-        if (activeCamera == 1) {
-            view = thirdCam.getViewMatrix();
-            projection = thirdCam.getProjectionMatrix();
-        }
-        else if (activeCamera == 2) {
-            view = binoCam.getViewMatrix();
-            projection = binoCam.getProjectionMatrix();
+        if (!gladLoadGL()) {
+            std::cout << "Failed to initialize GLAD" << std::endl;
+            appStatus = -1;
         }
         else {
-            view = orthoCam.getViewMatrix();
-            projection = orthoCam.getProjectionMatrix();
+            programReady = true;
         }
+    }
 
-        // Skybox
-        glDepthFunc(GL_LEQUAL);
-        glDepthMask(GL_FALSE);
+    if (programReady) {
+        glfwSetKeyCallback(window, key_callback);
+        glfwSetCursorPosCallback(window, mouse_callback);
+        updateCursorMode(window);
+
+        glEnable(GL_DEPTH_TEST);
+
+        // Shaders
+        Shader objectShader("Shaders/object.vert", "Shaders/object.frag");
+        Shader skyboxShader("Shaders/skybox.vert", "Shaders/skybox.frag");
+        Shader uiShader("Shaders/ui.vert", "Shaders/ui.frag");
+
+        // Textures
+        GLuint groundTexture = loadTexture("3D/field.jpg", true);
+        GLuint tankDiffuseTexture = loadTexture("3D/tank_diffuse.PNG", true);
+        GLuint tankNormalTexture = loadTexture("3D/tank_normal.png", true);
+
+        objectShader.use();
+        objectShader.setInt("tex0", 0);
+        objectShader.setInt("norm_tex", 1);
 
         skyboxShader.use();
-        skyboxShader.setBool("nightVisionMode", activeCamera == 2);
-
-        glm::mat4 skyView = glm::mat4(glm::mat3(view));
-        skyboxShader.setMat4("view", skyView);
-        skyboxShader.setMat4("projection", projection);
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-
-        glBindVertexArray(skyboxVAO);
-        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-
-        glDepthMask(GL_TRUE);
-        glDepthFunc(GL_LESS);
-
-        // Objects
-        objectShader.use();
-        objectShader.setMat4("view", view);
-        objectShader.setMat4("projection", projection);
-
-        objectShader.setVec3("pointLightPos", pLight.position);
-        objectShader.setVec3("pointLightColor", pLight.color);
-        objectShader.setFloat("pointLightIntensity", pLight.intensity);
-
-        objectShader.setVec3("dirLightDirection", dLight.direction);
-        objectShader.setVec3("dirLightColor", dLight.color);
-        objectShader.setFloat("dirLightIntensity", dLight.intensity);
-
-        objectShader.setBool("nightVisionMode", activeCamera == 2);
-
-        // Ground
-        objectShader.setBool("useNormalMap", false);
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, groundTexture);
-
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, tankNormalTexture);
-
-        groundModel.draw(objectShader.ID, groundVAO, (int)groundIndices);
+        skyboxShader.setInt("skybox", 0);
+        skyboxShader.setBool("nightVisionMode", false);
 
         // Tank
-        if (activeCamera != 2) {
-            objectShader.setBool("useNormalMap", true);
+        GLuint tankVAO = 0;
+        GLuint tankVBO = 0;
+        GLuint tankEBO = 0;
+        size_t tankIndices = 0;
+        bool tankLoaded = false;
+
+        tankLoaded = loadMeshNormalMapped("3D/tank.obj", tankVAO, tankVBO, tankEBO, tankIndices);
+
+        if (tankLoaded) {
+            player.model.position = glm::vec3(0.0f, 0.0f, 0.0f);
+            player.model.scale = glm::vec3(1.0f);
+            player.visualYawOffset = 90.0f;
+            player.syncRotation();
+        }
+        else {
+            std::cout << "Tank failed to load." << std::endl;
+            appStatus = -1;
+        }
+
+        // Ground
+        GLuint groundVAO = 0;
+        GLuint groundVBO = 0;
+        GLuint groundEBO = 0;
+        size_t groundIndices = 0;
+        createGroundPlane(groundVAO, groundVBO, groundEBO, groundIndices);
+
+        Model3D groundModel;
+        groundModel.position = glm::vec3(0.0f);
+
+        // Skybox geometry
+        float skyboxVertices[] = {
+            -1.0f, -1.0f, -1.0f,
+             1.0f, -1.0f, -1.0f,
+             1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
+            -1.0f, -1.0f,  1.0f,
+             1.0f, -1.0f,  1.0f,
+             1.0f,  1.0f,  1.0f,
+            -1.0f,  1.0f,  1.0f
+        };
+
+        unsigned int skyboxIndices[] = {
+            0, 1, 2, 2, 3, 0,
+            1, 5, 6, 6, 2, 1,
+            5, 4, 7, 7, 6, 5,
+            4, 0, 3, 3, 7, 4,
+            3, 2, 6, 6, 7, 3,
+            4, 5, 1, 1, 0, 4
+        };
+
+        GLuint skyboxVAO = 0;
+        GLuint skyboxVBO = 0;
+        GLuint skyboxEBO = 0;
+        glGenVertexArrays(1, &skyboxVAO);
+        glGenBuffers(1, &skyboxVBO);
+        glGenBuffers(1, &skyboxEBO);
+
+        glBindVertexArray(skyboxVAO);
+
+        glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), skyboxVertices, GL_STATIC_DRAW);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, skyboxEBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(skyboxIndices), skyboxIndices, GL_STATIC_DRAW);
+
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
+
+        std::vector<std::string> skyboxFaces = {
+            "Skybox/skyboxRT.png",
+            "Skybox/skyboxLF.png",
+            "Skybox/skyboxUP.png",
+            "Skybox/skyboxDN.png",
+            "Skybox/skyboxFT.png",
+            "Skybox/skyboxBK.png"
+        };
+
+        GLuint cubemapTexture = loadCubemap(skyboxFaces);
+
+        // Gundam asset
+        WorldObjectAsset gundamAsset;
+        bool gundamLoaded = false;
+
+        gundamAsset.diffuseTexture = loadTexture("3D/GundamEX/GundamEX-D.png", true);
+        gundamAsset.normalTexture = loadTexture("3D/GundamEX/GundamEX-N.png", true);
+
+        gundamLoaded = loadMeshNormalMapped("3D/GundamEX/gundam1.obj", gundamAsset.VAO, gundamAsset.VBO, gundamAsset.EBO, gundamAsset.indexCount);
+
+        if (!gundamLoaded) {
+            std::cout << "Gundam asset failed to load." << std::endl;
+            appStatus = -1;
+        }
+
+        // First 3 world objects (instances only of the same one for now)
+        std::vector<WorldObjectInstance> gundamObjects;
+
+        if (appStatus == 0) {
+            gundamObjects.resize(3);
+
+            // Gundam 1
+            gundamObjects[0].model.position = glm::vec3(-20.0f, 0.70f, -25.0f);
+            gundamObjects[0].model.rotation = glm::vec3(0.0f, 35.0f, 0.0f);
+            gundamObjects[0].model.scale = glm::vec3(3.0f);
+            gundamObjects[0].useNormalMap = true;
+
+            // Gundam 2
+            gundamObjects[1].model.position = glm::vec3(18.0f, 0.70f, -32.0f);
+            gundamObjects[1].model.rotation = glm::vec3(0.0f, -60.0f, 0.0f);
+            gundamObjects[1].model.scale = glm::vec3(3.0f);
+            gundamObjects[1].useNormalMap = true;
+
+            // Gundam 3
+            gundamObjects[2].model.position = glm::vec3(0.0f, 0.70f, -48.0f);
+            gundamObjects[2].model.rotation = glm::vec3(0.0f, 180.0f, 0.0f);
+            gundamObjects[2].model.scale = glm::vec3(3.0f);
+            gundamObjects[2].useNormalMap = true;
+        }
+
+        // Binocular overlay quad
+        float uiVertices[] = {
+            // pos      // uv
+            -1.0f, -1.0f,  0.0f, 0.0f,
+             1.0f, -1.0f,  1.0f, 0.0f,
+             1.0f,  1.0f,  1.0f, 1.0f,
+            -1.0f,  1.0f,  0.0f, 1.0f
+        };
+
+        unsigned int uiIndices[] = {
+            0, 1, 2,
+            0, 2, 3
+        };
+
+        GLuint uiVAO = 0;
+        GLuint uiVBO = 0;
+        GLuint uiEBO = 0;
+        glGenVertexArrays(1, &uiVAO);
+        glGenBuffers(1, &uiVBO);
+        glGenBuffers(1, &uiEBO);
+
+        glBindVertexArray(uiVAO);
+
+        glBindBuffer(GL_ARRAY_BUFFER, uiVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(uiVertices), uiVertices, GL_STATIC_DRAW);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, uiEBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uiIndices), uiIndices, GL_STATIC_DRAW);
+
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
+
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+        glEnableVertexAttribArray(1);
+
+        while (appStatus == 0 && !glfwWindowShouldClose(window)) {
+            float currentFrame = (float)glfwGetTime();
+            deltaTime = currentFrame - lastFrame;
+            lastFrame = currentFrame;
+
+            processInput(window);
+
+            thirdCam.setTarget(player.getCameraTarget());
+            binoCam.setPosition(player.getBinocularPosition());
+            pLight.position = player.getFrontLightPos();
+
+            glClearColor(0.03f, 0.03f, 0.05f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            glm::mat4 view = glm::mat4(1.0f);
+            glm::mat4 projection = glm::mat4(1.0f);
+            bool nightVisionMode = false;
+
+            if (activeCamera == 1) {
+                view = thirdCam.getViewMatrix();
+                projection = thirdCam.getProjectionMatrix();
+                nightVisionMode = false;
+            }
+            else {
+                if (activeCamera == 2) {
+                    view = binoCam.getViewMatrix();
+                    projection = binoCam.getProjectionMatrix();
+                    nightVisionMode = true;
+                }
+                else {
+                    view = orthoCam.getViewMatrix();
+                    projection = orthoCam.getProjectionMatrix();
+                    nightVisionMode = false;
+                }
+            }
+
+            // Skybox
+            glDepthFunc(GL_LEQUAL);
+            glDepthMask(GL_FALSE);
+
+            skyboxShader.use();
+            skyboxShader.setBool("nightVisionMode", nightVisionMode);
+
+            glm::mat4 skyView = glm::mat4(glm::mat3(view));
+            skyboxShader.setMat4("view", skyView);
+            skyboxShader.setMat4("projection", projection);
 
             glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, tankDiffuseTexture);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+
+            glBindVertexArray(skyboxVAO);
+            glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+
+            glDepthMask(GL_TRUE);
+            glDepthFunc(GL_LESS);
+
+            // Objects
+            objectShader.use();
+            objectShader.setMat4("view", view);
+            objectShader.setMat4("projection", projection);
+
+            objectShader.setVec3("pointLightPos", pLight.position);
+            objectShader.setVec3("pointLightColor", pLight.color);
+            objectShader.setFloat("pointLightIntensity", pLight.intensity);
+
+            objectShader.setVec3("dirLightDirection", dLight.direction);
+            objectShader.setVec3("dirLightColor", dLight.color);
+            objectShader.setFloat("dirLightIntensity", dLight.intensity);
+
+            objectShader.setBool("nightVisionMode", nightVisionMode);
+
+            // Ground
+            objectShader.setBool("useNormalMap", false);
+
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, groundTexture);
 
             glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_2D, tankNormalTexture);
 
-            player.draw(objectShader.ID, tankVAO, (int)tankIndices);
+            groundModel.draw(objectShader.ID, groundVAO, (int)groundIndices);
+
+            // Tank
+            if (activeCamera != 2) {
+                objectShader.setBool("useNormalMap", true);
+
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, tankDiffuseTexture);
+
+                glActiveTexture(GL_TEXTURE1);
+                glBindTexture(GL_TEXTURE_2D, tankNormalTexture);
+
+                player.draw(objectShader.ID, tankVAO, (int)tankIndices);
+            }
+
+            // World objects
+            if (gundamLoaded) {
+                size_t i = 0;
+                while (i < gundamObjects.size()) {
+                    drawWorldObject(objectShader, gundamAsset, gundamObjects[i]);
+                    i++;
+                }
+            }
+
+            // Binocular overlay
+            if (activeCamera == 2) {
+                glDisable(GL_DEPTH_TEST);
+
+                uiShader.use();
+                uiShader.setFloat("screenWidth", (float)SCR_WIDTH);
+                uiShader.setFloat("screenHeight", (float)SCR_HEIGHT);
+
+                glBindVertexArray(uiVAO);
+                glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+                glEnable(GL_DEPTH_TEST);
+            }
+
+            glfwSwapBuffers(window);
+            glfwPollEvents();
         }
+    }
 
-        // Binocular overlay
-        if (activeCamera == 2) {
-            glDisable(GL_DEPTH_TEST);
-
-            uiShader.use();
-            uiShader.setFloat("screenWidth", (float)SCR_WIDTH);
-            uiShader.setFloat("screenHeight", (float)SCR_HEIGHT);
-
-            glBindVertexArray(uiVAO);
-            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-            glEnable(GL_DEPTH_TEST);
-        }
-
-        glfwSwapBuffers(window);
-        glfwPollEvents();
+    if (window != NULL) {
+        glfwDestroyWindow(window);
     }
 
     glfwTerminate();

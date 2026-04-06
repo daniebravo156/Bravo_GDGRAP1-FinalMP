@@ -10,7 +10,7 @@ struct Model3D {
     glm::vec3 rotation = glm::vec3(0.0f);
     glm::vec3 scale = glm::vec3(1.0f);
 
-    void draw(GLuint shaderProgram, GLuint VAO, int indexCount) {
+    void draw(GLuint shaderProgram, GLuint VAO, int indexCount) const {
         glm::mat4 model = glm::mat4(1.0f);
         model = glm::translate(model, position);
         model = glm::rotate(model, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));

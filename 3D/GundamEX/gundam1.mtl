@@ -1,0 +1,22 @@
+# Blender 5.1.0 MTL File: 'None'
+# www.blender.org
+
+newmtl BEAM
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.000000 0.000000 0.000000
+Ks 0.500000 0.500000 0.500000
+Ke 5.000000 1.007778 5.000000
+Ni 1.500000
+d 1.000000
+illum 2
+
+newmtl GundamEX
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd exgundam-ex/source/textures/GundamEX-D.png
+map_Ke exgundam-ex/source/textures/GundamEX-E.png
