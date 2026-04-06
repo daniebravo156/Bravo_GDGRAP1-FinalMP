@@ -303,12 +303,13 @@ int main() {
         glEnableVertexAttribArray(0);
 
         std::vector<std::string> skyboxFaces = {
-            "Skybox/skyboxRT.png",
-            "Skybox/skyboxLF.png",
-            "Skybox/skyboxUP.png",
-            "Skybox/skyboxDN.png",
-            "Skybox/skyboxFT.png",
-            "Skybox/skyboxBK.png"
+			"Skybox/skyboxRT.png", //x+
+			"Skybox/skyboxLF.png", //x-
+			"Skybox/skyboxUP.png", //y+
+			"Skybox/skyboxDN.png", //y-
+			"Skybox/skyboxBK.png", //z+
+			"Skybox/skyboxFT.png" //z-
+            
         };
 
         GLuint cubemapTexture = loadCubemap(skyboxFaces);
