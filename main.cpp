@@ -341,32 +341,11 @@ int main() {
             "3D/Gundams/gundam6/gundam6_N.png"
         };
 
-        glm::vec3 gundamPositions[GUNDAM_COUNT] = {
-            glm::vec3(-20.0f, 0.70f, -25.0f),
-            glm::vec3(18.0f, 0.70f, -32.0f),
-            glm::vec3(0.0f, 0.70f, -48.0f),
-            glm::vec3(-38.0f, 0.70f, 10.0f),
-            glm::vec3(32.0f, 0.70f, 18.0f),
-            glm::vec3(8.0f, 0.70f, 42.0f)
-        };
-
-        glm::vec3 gundamRotations[GUNDAM_COUNT] = {
-            glm::vec3(0.0f, 35.0f, 0.0f),
-            glm::vec3(0.0f, -60.0f, 0.0f),
-            glm::vec3(0.0f, 180.0f, 0.0f),
-            glm::vec3(0.0f, 90.0f, 0.0f),
-            glm::vec3(0.0f, -135.0f, 0.0f),
-            glm::vec3(0.0f, 15.0f, 0.0f)
-        };
-
-        glm::vec3 gundamScales[GUNDAM_COUNT] = {
-            glm::vec3(3.0f),
-            glm::vec3(3.0f),
-            glm::vec3(3.0f),
-            glm::vec3(3.0f),
-            glm::vec3(3.0f),
-            glm::vec3(3.0f)
-        };
+        // Gundam formation
+		float gundamRingRadius = 62.0f; //distance from center/player
+		float gundamY = -0.20f; //height on the ground
+        float gundamScale = 9.0f; //size
+        float gundamFacingOffset = 90.0f; //face me
 
         // Gundam assets
         std::vector<WorldObjectAsset> gundamAssets;
@@ -403,12 +382,23 @@ int main() {
         // Gundam objects
         if (appStatus == 0) {
             int i = 0;
+            float angleStep = 360.0f / (float)GUNDAM_COUNT;
 
             while (i < GUNDAM_COUNT) {
-                gundamObjects[i].model.position = gundamPositions[i];
-                gundamObjects[i].model.rotation = gundamRotations[i];
-                gundamObjects[i].model.scale = gundamScales[i];
+                float angleDeg = angleStep * (float)i;
+                float angleRad = glm::radians(angleDeg);
+
+                float posX = cos(angleRad) * gundamRingRadius;
+                float posZ = sin(angleRad) * gundamRingRadius;
+
+                glm::vec3 toPlayer = glm::normalize(glm::vec3(-posX, 0.0f, -posZ));
+                float faceYaw = glm::degrees(atan2(toPlayer.z, toPlayer.x));
+
+                gundamObjects[i].model.position = glm::vec3(posX, gundamY, posZ);
+                gundamObjects[i].model.rotation = glm::vec3(0.0f, -faceYaw + gundamFacingOffset, 0.0f);
+                gundamObjects[i].model.scale = glm::vec3(gundamScale);
                 gundamObjects[i].useNormalMap = true;
+
                 i++;
             }
         }
