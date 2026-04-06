@@ -1,0 +1,24 @@
+# Blender 5.1.0 MTL File: 'None'
+# www.blender.org
+
+newmtl ZAKU
+Ns 640.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd iims-06-zaku-ii/source/textures/zaku.png
+map_Ke iims-06-zaku-ii/source/textures/ZAKU-E.png
+map_Bump -bm 1.000000 iims-06-zaku-ii/source/textures/Zaku-N.png
+
+newmtl ZAKUMACHINEGUN
+Ns 640.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd iims-06-zaku-ii/source/textures/ZAKUMACHINEGUN.png
+map_Ke iims-06-zaku-ii/source/textures/ZAKUMACHINEGUN-E.png
+map_Bump -bm 1.000000 iims-06-zaku-ii/source/textures/ZAKUMACHINEGUN-N.png

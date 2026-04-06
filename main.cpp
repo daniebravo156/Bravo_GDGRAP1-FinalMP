@@ -19,6 +19,7 @@
 // Globals
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
+const int GUNDAM_COUNT = 6;
 
 int activeCamera = 1;
 // 1 = 3rd person
@@ -312,43 +313,104 @@ int main() {
 
         GLuint cubemapTexture = loadCubemap(skyboxFaces);
 
-        // Gundam asset
-        WorldObjectAsset gundamAsset;
-        bool gundamLoaded = false;
+        // Gundam asset paths
+        std::string gundamObjPaths[GUNDAM_COUNT] = {
+            "3D/Gundams/gundam1/gundam1.obj",
+            "3D/Gundams/gundam2/gundam2.obj",
+            "3D/Gundams/gundam3/gundam3.obj",
+            "3D/Gundams/gundam4/gundam4.obj",
+            "3D/Gundams/gundam5/gundam5.obj",
+            "3D/Gundams/gundam6/gundam6.obj"
+        };
 
-        gundamAsset.diffuseTexture = loadTexture("3D/GundamEX/GundamEX-D.png", true);
-        gundamAsset.normalTexture = loadTexture("3D/GundamEX/GundamEX-N.png", true);
+        std::string gundamDiffusePaths[GUNDAM_COUNT] = {
+            "3D/Gundams/gundam1/gundam1_D.png",
+            "3D/Gundams/gundam2/gundam2_D.png",
+            "3D/Gundams/gundam3/gundam3_D.png",
+            "3D/Gundams/gundam4/gundam4_D.png",
+            "3D/Gundams/gundam5/gundam5_D.png",
+            "3D/Gundams/gundam6/gundam6_D.png"
+        };
 
-        gundamLoaded = loadMeshNormalMapped("3D/GundamEX/gundam1.obj", gundamAsset.VAO, gundamAsset.VBO, gundamAsset.EBO, gundamAsset.indexCount);
+        std::string gundamNormalPaths[GUNDAM_COUNT] = {
+            "3D/Gundams/gundam1/gundam1_N.png",
+            "3D/Gundams/gundam2/gundam2_N.png",
+            "3D/Gundams/gundam3/gundam3_N.png",
+            "3D/Gundams/gundam4/gundam4_N.png",
+            "3D/Gundams/gundam5/gundam5_N.png",
+            "3D/Gundams/gundam6/gundam6_N.png"
+        };
 
-        if (!gundamLoaded) {
-            std::cout << "Gundam asset failed to load." << std::endl;
-            appStatus = -1;
-        }
+        glm::vec3 gundamPositions[GUNDAM_COUNT] = {
+            glm::vec3(-20.0f, 0.70f, -25.0f),
+            glm::vec3(18.0f, 0.70f, -32.0f),
+            glm::vec3(0.0f, 0.70f, -48.0f),
+            glm::vec3(-38.0f, 0.70f, 10.0f),
+            glm::vec3(32.0f, 0.70f, 18.0f),
+            glm::vec3(8.0f, 0.70f, 42.0f)
+        };
 
-        // First 3 world objects (instances only of the same one for now)
+        glm::vec3 gundamRotations[GUNDAM_COUNT] = {
+            glm::vec3(0.0f, 35.0f, 0.0f),
+            glm::vec3(0.0f, -60.0f, 0.0f),
+            glm::vec3(0.0f, 180.0f, 0.0f),
+            glm::vec3(0.0f, 90.0f, 0.0f),
+            glm::vec3(0.0f, -135.0f, 0.0f),
+            glm::vec3(0.0f, 15.0f, 0.0f)
+        };
+
+        glm::vec3 gundamScales[GUNDAM_COUNT] = {
+            glm::vec3(3.0f),
+            glm::vec3(3.0f),
+            glm::vec3(3.0f),
+            glm::vec3(3.0f),
+            glm::vec3(3.0f),
+            glm::vec3(3.0f)
+        };
+
+        // Gundam assets
+        std::vector<WorldObjectAsset> gundamAssets;
         std::vector<WorldObjectInstance> gundamObjects;
 
         if (appStatus == 0) {
-            gundamObjects.resize(3);
+            gundamAssets.resize(GUNDAM_COUNT);
+            gundamObjects.resize(GUNDAM_COUNT);
 
-            // Gundam 1
-            gundamObjects[0].model.position = glm::vec3(-20.0f, 0.70f, -25.0f);
-            gundamObjects[0].model.rotation = glm::vec3(0.0f, 35.0f, 0.0f);
-            gundamObjects[0].model.scale = glm::vec3(3.0f);
-            gundamObjects[0].useNormalMap = true;
+            int i = 0;
+            bool loadOk = true;
 
-            // Gundam 2
-            gundamObjects[1].model.position = glm::vec3(18.0f, 0.70f, -32.0f);
-            gundamObjects[1].model.rotation = glm::vec3(0.0f, -60.0f, 0.0f);
-            gundamObjects[1].model.scale = glm::vec3(3.0f);
-            gundamObjects[1].useNormalMap = true;
+            while (i < GUNDAM_COUNT && loadOk) {
+                gundamAssets[i].diffuseTexture = loadTexture(gundamDiffusePaths[i].c_str(), true);
+                gundamAssets[i].normalTexture = loadTexture(gundamNormalPaths[i].c_str(), true);
 
-            // Gundam 3
-            gundamObjects[2].model.position = glm::vec3(0.0f, 0.70f, -48.0f);
-            gundamObjects[2].model.rotation = glm::vec3(0.0f, 180.0f, 0.0f);
-            gundamObjects[2].model.scale = glm::vec3(3.0f);
-            gundamObjects[2].useNormalMap = true;
+                loadOk = loadMeshNormalMapped(
+                    gundamObjPaths[i].c_str(),
+                    gundamAssets[i].VAO,
+                    gundamAssets[i].VBO,
+                    gundamAssets[i].EBO,
+                    gundamAssets[i].indexCount
+                );
+
+                if (!loadOk) {
+                    std::cout << "Gundam asset failed to load at index " << i << std::endl;
+                    appStatus = -1;
+                }
+
+                i++;
+            }
+        }
+
+        // Gundam objects
+        if (appStatus == 0) {
+            int i = 0;
+
+            while (i < GUNDAM_COUNT) {
+                gundamObjects[i].model.position = gundamPositions[i];
+                gundamObjects[i].model.rotation = gundamRotations[i];
+                gundamObjects[i].model.scale = gundamScales[i];
+                gundamObjects[i].useNormalMap = true;
+                i++;
+            }
         }
 
         // Binocular overlay quad
@@ -481,11 +543,12 @@ int main() {
                 player.draw(objectShader.ID, tankVAO, (int)tankIndices);
             }
 
-            // World objects
-            if (gundamLoaded) {
-                size_t i = 0;
-                while (i < gundamObjects.size()) {
-                    drawWorldObject(objectShader, gundamAsset, gundamObjects[i]);
+            // Gundam objects
+            if (appStatus == 0) {
+                int i = 0;
+
+                while (i < GUNDAM_COUNT) {
+                    drawWorldObject(objectShader, gundamAssets[i], gundamObjects[i]);
                     i++;
                 }
             }

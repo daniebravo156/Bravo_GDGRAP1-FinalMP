@@ -1,0 +1,24 @@
+# Blender 5.1.0 MTL File: 'None'
+# www.blender.org
+
+newmtl GUNDAM
+Ka 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd gundam3/source/textures/GUNDAM.png
+map_Ns gundam3/source/textures/GUNDAM-R.png
+map_refl gundam3/source/textures/GUNDAM-M.png
+map_Ke gundam3/source/textures/GUNDAM-E.png
+map_Bump -bm 1.000000 gundam3/source/textures/GUNDAM-N.png
+
+newmtl マテリアル
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.000000 0.000000 0.000000
+Ks 0.000000 0.000000 0.000000
+Ke 3.000000 0.647580 3.000000
+Ni 1.500000
+d 1.000000
+illum 1

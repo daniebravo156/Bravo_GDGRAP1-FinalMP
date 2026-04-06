@@ -1,0 +1,12 @@
+# Blender 5.1.0 MTL File: 'None'
+# www.blender.org
+
+newmtl EXA-ON
+Ns 640.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd extreme-application-onextreme-gundam/source/textures/EXA-ON.png
+map_Ke extreme-application-onextreme-gundam/source/textures/EXA-ON-E.png
