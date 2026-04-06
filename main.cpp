@@ -262,6 +262,7 @@ int main() {
 
         Model3D groundModel;
         groundModel.position = glm::vec3(0.0f);
+		
 
         // Skybox geometry
         float skyboxVertices[] = {
@@ -303,13 +304,12 @@ int main() {
         glEnableVertexAttribArray(0);
 
         std::vector<std::string> skyboxFaces = {
-			"Skybox/skyboxRT.png", //x+
-			"Skybox/skyboxLF.png", //x-
-			"Skybox/skyboxUP.png", //y+
-			"Skybox/skyboxDN.png", //y-
-			"Skybox/skyboxBK.png", //z+
-			"Skybox/skyboxFT.png" //z-
-            
+            "Skybox/skyboxRT.png", //x+
+            "Skybox/skyboxLF.png", //x-
+            "Skybox/skyboxUP.png", //y+
+            "Skybox/skyboxDN.png", //y-
+            "Skybox/skyboxFT.png", //z+ 
+            "Skybox/skyboxBK.png"  //z- 
         };
 
         GLuint cubemapTexture = loadCubemap(skyboxFaces);
@@ -343,8 +343,8 @@ int main() {
         };
 
         // Gundam formation
-		float gundamRingRadius = 62.0f; //distance from center/player
-		float gundamY = -0.20f; //height on the ground
+        float gundamRingRadius = 62.0f; //distance from center/player
+        float gundamY = -0.20f; //height on the ground
         float gundamScale = 9.0f; //size
         float gundamFacingOffset = 90.0f; //face me
 
@@ -476,8 +476,7 @@ int main() {
             }
 
             // Skybox
-            glDepthFunc(GL_LEQUAL);
-            glDepthMask(GL_FALSE);
+            glDisable(GL_DEPTH_TEST);
 
             skyboxShader.use();
             skyboxShader.setBool("nightVisionMode", nightVisionMode);
@@ -492,8 +491,7 @@ int main() {
             glBindVertexArray(skyboxVAO);
             glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 
-            glDepthMask(GL_TRUE);
-            glDepthFunc(GL_LESS);
+            glEnable(GL_DEPTH_TEST);
 
             // Objects
             objectShader.use();

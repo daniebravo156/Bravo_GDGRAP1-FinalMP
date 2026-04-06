@@ -35,7 +35,7 @@ public:
         pitch += yoffset * 0.2f;
 
         if (pitch > 20.0f) pitch = 20.0f;
-        if (pitch < -35.0f) pitch = -35.0f;
+        if (pitch < -15.0f) pitch = -15.0f;
     }
 
     glm::vec3 getPosition() const {
